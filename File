@@ -1,0 +1,78 @@
+每一个知识点
+实现了什么功能？
+为什么这样做？
+有没有更好的办法？
+
+1） sdwebimage 是什么？解决了什么问题？
+
+一个异步的图片加载与图片缓存管理器，并且提供UImageView，UIButton等分类，方便图片显示
+
+1 异步图片加载与显示
+2 除了png，gpeg格式图片，还支持gif，webP格式图片
+3 一个异步的内存 + 磁盘图片缓存
+4 后台图片解压缩处理
+5 确保同一个URL的图片不被下载多次，虚假的URL不会被反复加载
+6 确保下载及缓存时，主线程不被阻塞
+
+2）sdwebimage的实现
+0 关键类介绍
+SDWebImageDownloadOperation 实现具体的网络下载任务
+SDWebImageDownload 实现下载队列管理，网络请求初始化设置，回调处理，多线程实现
+SDImageCache 实现异步的内存，磁盘图片缓存
+SDWebImageManager   提供下载的入口，综合管理网络下载操作，内存和磁盘缓存
+
+关键类关系：
+SDWebImageDowload 管理SDWebImageDownloadOperation的队列
+SDCacheImage 对 SDWebImageDowload会调的数据进行内存和磁盘缓存管理；查询本地缓存供SDWebImageManager使用
+SDWebImageManager 管理协调SDWebImageDowload，SDCacheImage 为用户提供操作接口
+
+1 下载策略
+优先级，是否缓存，渐进式显示等等
+
+2 缓存策略
+时间：默认一个星期
+空间：NSCache来管理
+
+3 网络下载
+NSUrlSession
+
+4 多线程处理,实现异步操作
+NSOperationQueue
+GCD
+
+5 工具类简介
+SDWebImageCompat 图片适配
+SDWebImageDecoder 图片解码
+
+为什么需要在此处进行图片解码？
+ImageIO简介
+
+6 重要分类
+UIView
+UIButton
+UIImageView
+
+
+3）回顾
+3.0 版本与4.0版本差异
+UIView 分类
+底层网络层 URLConnection 被URLSession替代
+
+4）扩展
+
+网络层缓存策略
+NSURLRequestCachePolicy 缓存策略
+
+1> NSURLRequestUseProtocolCachePolicy = 0, 默认的缓存策略， 如果缓存不存在，直接从服务端获取。如果缓存存在，会根据response中的Cache-Control字段判断下一步操作，如: Cache-Control字段为must-revalidata, 则询问服务端该数据是否有更新，无更新的话直接返回给用户缓存数据，若已更新，则请求服务端.
+
+2> NSURLRequestReloadIgnoringLocalCacheData = 1, 忽略本地缓存数据，直接请求服务端.
+
+3> NSURLRequestIgnoringLocalAndRemoteCacheData = 4, 忽略本地缓存，代理服务器以及其他中介，直接请求源服务端.
+
+4> NSURLRequestReloadIgnoringCacheData = NSURLRequestReloadIgnoringLocalCacheData
+
+5> NSURLRequestReturnCacheDataElseLoad = 2, 有缓存就使用，不管其有效性(即忽略Cache-Control字段), 无则请求服务端.
+
+6> NSURLRequestReturnCacheDataDontLoad = 3, 死活加载本地缓存. 没有就失败. (确定当前无网络时使用)
+
+7> NSURLRequestReloadRevalidatingCacheData = 5, 缓存数据必须得得到服务端确认有效才使用(貌似是NSURLRequestUseProtocolCachePolicy中的一种情况)
